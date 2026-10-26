@@ -1,4 +1,3 @@
-
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -16,6 +15,12 @@ import {
 } from '../services/simulacaoApi'
 
 import type { DadosSimulacao } from '../types/simulacao'
+
+// Por padrão, a simulação é demonstrativa e não depende do backend.
+// Para usar o endpoint real em outro ambiente, defina
+// VITE_SIMULACAO_MODO=api antes de compilar o frontend.
+const MODO_DEMONSTRACAO =
+  import.meta.env.VITE_SIMULACAO_MODO !== 'api'
 
 function Simulacao() {
   const navigate = useNavigate()
@@ -181,7 +186,7 @@ function Simulacao() {
   }
 
   // =========================================
-  // ETAPA 5 - CONSULTA À API
+  // ETAPA 5 - CONCLUSÃO DEMONSTRATIVA OU CONSULTA À API
   // =========================================
 
   async function handleDiagnosticoConcluido() {
@@ -191,7 +196,7 @@ function Simulacao() {
 
     requisicaoEmAndamento.current = true
     setErro(null)
-    setCarregando(true)
+    setCarregando(!MODO_DEMONSTRACAO)
 
     try {
       // Campos comuns obrigatórios.
@@ -252,10 +257,20 @@ function Simulacao() {
         dataBase: dados.dataBase,
       }
 
-      const resultadoApi =
-        await analisarSimulacao(dadosSimulacao)
+      // Demonstração: conclui o fluxo sem consultar a API.
+      // Os indicadores não calculados ficam indisponíveis.
+      // Modo API: mantém a integração original para uso futuro.
+      const resultadoSimulacao: ResultadoSimulacao =
+        MODO_DEMONSTRACAO
+          ? {
+              risco: null,
+              inadimplenciaEstimada: null,
+              carteiraAtivaMedia: null,
+              operacoesSemelhantes: null,
+            }
+          : await analisarSimulacao(dadosSimulacao)
 
-      setResultado(resultadoApi)
+      setResultado(resultadoSimulacao)
       setEtapa(6)
     } catch (error) {
       console.error('Erro na simulação:', error)
@@ -423,25 +438,40 @@ function Simulacao() {
       {/* ETAPA 6 - RESULTADO */}
 
       {etapa === 6 && resultado && (
-        <ResultadoAnalise
-          tipoCliente={dados.tipoCliente}
-          porteEmpresa={dados.porteEmpresa}
-          setorEconomico={dados.setorEconomico}
-          risco={resultado.risco ?? undefined}
-          inadimplenciaEstimada={
-            resultado.inadimplenciaEstimada ??
-            undefined
-          }
-          carteiraAtivaMedia={
-            resultado.carteiraAtivaMedia ??
-            undefined
-          }
-          operacoesSemelhantes={
-            resultado.operacoesSemelhantes ??
-            undefined
-          }
-          onVerDashboard={handleVerDashboard}
-        />
+        <>
+          {MODO_DEMONSTRACAO && (
+            <div className="card" role="note">
+              <h3>Modo demonstração</h3>
+              <p>
+                Este resultado demonstra o funcionamento da interface.
+                Nenhuma análise de risco de crédito foi realizada.
+                Os indicadores permanecem indisponíveis até a
+                integração com uma API compatível.
+              </p>
+            </div>
+          )}
+
+          <ResultadoAnalise
+            modoDemonstracao={MODO_DEMONSTRACAO}
+            tipoCliente={dados.tipoCliente}
+            porteEmpresa={dados.porteEmpresa}
+            setorEconomico={dados.setorEconomico}
+            risco={resultado.risco ?? undefined}
+            inadimplenciaEstimada={
+              resultado.inadimplenciaEstimada ??
+              undefined
+            }
+            carteiraAtivaMedia={
+              resultado.carteiraAtivaMedia ??
+              undefined
+            }
+            operacoesSemelhantes={
+              resultado.operacoesSemelhantes ??
+              undefined
+            }
+            onVerDashboard={handleVerDashboard}
+          />
+        </>
       )}
     </div>
   )

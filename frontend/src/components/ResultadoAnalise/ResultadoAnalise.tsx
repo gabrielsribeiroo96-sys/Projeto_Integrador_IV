@@ -1,4 +1,3 @@
-
 interface ResultadoAnaliseProps {
   tipoCliente?: string
   porteEmpresa?: string
@@ -7,6 +6,7 @@ interface ResultadoAnaliseProps {
   inadimplenciaEstimada?: number | null
   carteiraAtivaMedia?: number | null
   operacoesSemelhantes?: number | null
+  modoDemonstracao?: boolean
   onVerDashboard: () => void
 }
 
@@ -18,6 +18,7 @@ function ResultadoAnalise({
   inadimplenciaEstimada,
   carteiraAtivaMedia,
   operacoesSemelhantes,
+  modoDemonstracao = false,
   onVerDashboard,
 }: ResultadoAnaliseProps) {
   function formatarMoeda(valor?: number | null) {
@@ -57,23 +58,18 @@ function ResultadoAnalise({
         ? 'Pessoa Jurídica'
         : 'Não disponível'
 
-  const riscoExibido =
-    risco?.trim() || 'Não disponível'
-
-  const riscoDisponivel =
-    riscoExibido !== 'Não disponível'
+  const riscoExibido = risco?.trim() || 'Não disponível'
+  const riscoDisponivel = riscoExibido !== 'Não disponível'
 
   const indicadores = [
     {
       titulo: 'Risco de crédito',
       valor: riscoExibido,
-      descricao: 'Classificação de risco retornada pela API',
+      descricao: 'Classificação de risco, quando disponível',
     },
     {
       titulo: 'Inadimplência estimada',
-      valor: formatarPercentual(
-        inadimplenciaEstimada
-      ),
+      valor: formatarPercentual(inadimplenciaEstimada),
       descricao: 'Percentual estimado de inadimplência',
     },
     {
@@ -83,9 +79,7 @@ function ResultadoAnalise({
     },
     {
       titulo: 'Operações semelhantes',
-      valor: formatarNumero(
-        operacoesSemelhantes
-      ),
+      valor: formatarNumero(operacoesSemelhantes),
       descricao: 'Quantidade de operações comparáveis',
     },
   ]
@@ -97,11 +91,12 @@ function ResultadoAnalise({
           ETAPA 6 DE 6
         </span>
 
-        <h2>Resultado da Análise</h2>
+        <h2>{modoDemonstracao ? 'Resumo da Simulação' : 'Resultado da Análise'}</h2>
 
         <p>
-          Confira o perfil informado e os indicadores
-          disponibilizados pelo serviço de análise.
+          {modoDemonstracao
+            ? 'Confira o perfil informado. Os indicadores de risco não são calculados no modo demonstração.'
+            : 'Confira o perfil informado e os indicadores disponibilizados pelo serviço de análise.'}
         </p>
       </div>
 
@@ -121,7 +116,6 @@ function ResultadoAnalise({
               <span>Porte da empresa:</span>{' '}
               {porteEmpresa || 'Não informado'}
             </p>
-
             <p>
               <span>Setor econômico:</span>{' '}
               {setorEconomico || 'Não informado'}
@@ -137,7 +131,6 @@ function ResultadoAnalise({
             key={indicador.titulo}
           >
             <h3>{indicador.titulo}</h3>
-
             <p
               className={`resultado-indicador-valor ${
                 indicador.valor === 'Não disponível'
@@ -147,36 +140,28 @@ function ResultadoAnalise({
             >
               {indicador.valor}
             </p>
-
             <small>{indicador.descricao}</small>
           </section>
         ))}
       </div>
 
       {!riscoDisponivel && (
-        <div
-          className="resultado-aviso"
-          role="status"
-        >
+        <div className="resultado-aviso" role="status">
           <strong>
-            Indicadores ainda não disponíveis
+            {modoDemonstracao
+              ? 'Indicadores não calculados'
+              : 'Indicadores ainda não disponíveis'}
           </strong>
-
           <p>
-            A solicitação foi processada pelo serviço,
-            mas os indicadores financeiros ainda não
-            foram disponibilizados pela API.
-            Nenhuma classificação de risco foi
-            calculada nesta apresentação.
+            {modoDemonstracao
+              ? 'O fluxo demonstrativo foi concluído sem consultar a API. Nenhum indicador financeiro ou classificação de risco foi calculado. O Dashboard demonstra a interface com dados fictícios independentes desta simulação.'
+              : 'A API não forneceu uma classificação de risco nesta resposta. Verifique a disponibilidade dos indicadores no serviço de análise.'}
           </p>
         </div>
       )}
 
       <div className="form-actions">
-        <button
-          type="button"
-          onClick={onVerDashboard}
-        >
+        <button type="button" onClick={onVerDashboard}>
           Ver Dashboard →
         </button>
       </div>

@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import GraficoRisco from '../components/GraficoRisco/GraficoRisco'
@@ -79,6 +78,11 @@ const dadosDemonstracao: DashboardCompleto = {
   ],
 }
 
+// Usa o mesmo controle de modo da página Simulação.
+// Apenas VITE_SIMULACAO_MODO=api ativa a consulta automática.
+const MODO_DEMONSTRACAO =
+  import.meta.env.VITE_SIMULACAO_MODO !== 'api'
+
 const MENSAGEM_ERRO =
   'Os dados do Dashboard ainda não estão disponíveis pela API.'
 
@@ -99,24 +103,31 @@ const formatadorMoeda = new Intl.NumberFormat('pt-BR', {
 })
 
 function Dashboard() {
-  const [dados, setDados] =
-    useState<DashboardCompleto | null>(null)
+  const [dados, setDados] = useState<DashboardCompleto | null>(
+    MODO_DEMONSTRACAO ? dadosDemonstracao : null
+  )
 
-  const [carregando, setCarregando] = useState(true)
+  const [carregando, setCarregando] = useState(
+    !MODO_DEMONSTRACAO
+  )
 
   const [erro, setErro] = useState<string | null>(null)
 
   const [modoDemonstracao, setModoDemonstracao] =
-    useState(false)
+    useState(MODO_DEMONSTRACAO)
 
   // Identifica a requisição válida mais recente.
   const requisicaoAtual = useRef(0)
 
   // =========================================
-  // CONSULTA INICIAL DA API
+  // CONSULTA INICIAL DA API (somente no modo API)
   // =========================================
 
   useEffect(() => {
+    if (MODO_DEMONSTRACAO) {
+      return
+    }
+
     const identificador = ++requisicaoAtual.current
 
     void buscarDashboard()
@@ -369,7 +380,9 @@ function Dashboard() {
       valor: formatadorMoeda.format(
         dados.volume_credito_total
       ),
-      descricao: 'Volume financeiro informado pela API',
+      descricao: modoDemonstracao
+        ? 'Volume financeiro ilustrativo — dados fictícios'
+        : 'Volume financeiro informado pela API',
     },
     {
       titulo: 'Carteira ativa',
